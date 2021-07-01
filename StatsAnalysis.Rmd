@@ -1,0 +1,57 @@
+---
+title: "Pokemon Stats"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(plotly)
+library(factoextra)
+```
+
+```{r}
+pstats <- read.csv("../pokemon.csv")
+```
+
+```{r}
+pstats %>% pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") %>% ggplot(aes(x=stat,y=value, fill=stat)) + geom_boxplot() + labs(title = "Distribution of stats") -> p
+ggplotly(p)
+```
+
+
+```{r}
+pstats %>% pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") %>% ggplot(aes(x=stat,y=reorder(value,value),fill=Total,text=Name)) + geom_bar(stat="identity", position="dodge") + labs(title="Pokes oredered by stat", y="value") -> p
+ggplotly(p)
+```
+
+
+```{r}
+pstats %>% pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") %>% ggplot(aes(color=stat,y=value,x=Total,text=Name)) + geom_point() + labs(title="Plotting stats vs PC") -> p
+ggplotly(p)
+```
+
+
+```{r}
+pstats %>% select(HP,Attack,Defence,Sp_attack,Sp_defence,Speed) %>% prcomp() -> pca_poke
+pcpoke <- pca_poke$x
+pcpoke <- cbind(as.data.frame(pcpoke),nombre=pstats$Name)
+pcpoke %>% ggplot(aes(x=PC1,y=PC2, color=PC3, text=nombre)) + geom_point() + labs(title = "Pokes in the 2 PC") -> p
+ggplotly(p)
+```
+
+
+```{r}
+plot_ly(pcpoke, x= ~PC1, y=  ~PC2, z= ~PC3, color = ~PC4, text= ~nombre)
+```
+
+
+```{r}
+fviz_pca_var(pca_poke, col.var = "contrib", gradient.cols=c("#00AFBB","#E7B800","#FC4E07"), repel=TRUE) -> p
+p
+```
+
+
+
+
