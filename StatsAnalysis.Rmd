@@ -9,6 +9,7 @@ output:
 library(tidyverse)
 library(plotly)
 library(factoextra)
+library(heatmaply)
 ```
 
 ```{r}
@@ -54,4 +55,30 @@ p
 
 
 
+```{r}
+ptstats<-as.matrix(pstats)
+rownames(ptstats)<-pstats$Name
+d<-dist(ptstats)
+h<-hclust(d)
+fviz_dend(x=h,k=6)
+```
+
+
+```{r}
+heatmaply(apply(ptstats[,3:8],c(1,2),as.numeric))
+```
+
+
+
+```{r}
+cluspoke<-cutree(h,k=6)
+cbind(pcpoke,cluspoke) %>% ggplot(aes(x=PC1,y=PC2, color=as.factor(cluspoke), text=nombre)) + geom_point() + labs(title = "Pokes in the 2 PC") -> p
+ggplotly(p)
+```
+
+
+```{r}
+cbind(pstats,cluspoke) %>% ggplot(aes(x=Defence,y=Attack, color=as.factor(cluspoke), size=Total, text=Name)) + geom_point() + labs(title = "Pokes in the 2 PC") -> p
+ggplotly(p)
+```
 
