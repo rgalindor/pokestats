@@ -5,34 +5,87 @@ output:
     df_print: paged
 ---
 
+In this review I will compare stats from Pokemon in order to get insights of current classification of them in terms of their capabilities for competitive battles.
+
+## Libraries
+
+This analysis will be made using `R` so we need to load some libraries:
+
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(plotly)
 library(factoextra)
 library(heatmaply)
+library(knitr)
 ```
+
+## Dataset
+
+I will use a [Pokemon dataset](https://www.kaggle.com/shubhamchambhare/pokemons-and-there-stats) available in [kaggle](https://www.kaggle.com).
+
 
 ```{r}
 pstats <- read.csv("../pokemon.csv")
 ```
 
+This dataset contains information about battle stats of the Pokemon as follows:
+
+- `HP` Is the health power of the pokemon, it could be thought as the stamina of the pokemon.
+- `Attack` The power of physical attacks.
+- `Defence` The resistance to physical attacks.
+- `Sp_attack` The power of non physical attacks (special / energy attacks).
+- `Sp_defence` The resistance to non physical attacks.
+- `Speed` The velocity to perform an attack.
+- `Total` Is the sum of the other variables but `Name`.
+- `Name` Is the name of the Pokemon.
+
 ```{r}
-pstats %>% pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") %>% ggplot(aes(x=stat,y=value, fill=stat)) + geom_boxplot() + labs(title = "Distribution of stats") -> p
+kable(head(pstats))
+```
+
+## Exploratory analysis
+
+The first step consists in perform an exploratory analysis of the different variables in this dataset. It is always useful to start identifying whether there is an identificable difference in the distribution of de data:
+
+```{r}
+pstats %>% 
+  pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") -> pivstats
+pivstats %>%
+  ggplot(aes(x=stat,y=value, fill=stat)) +
+  geom_boxplot() +
+  labs(title = "Distribution of stats") -> p
 ggplotly(p)
 ```
 
+As you can see, variables are equivalent between them so we can use raw data as it is.
+
+I generate an interactive plot to see ranks of the pokemon across the variable stats:
 
 ```{r}
-pstats %>% pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") %>% ggplot(aes(x=stat,y=reorder(value,value),fill=Total,text=Name)) + geom_bar(stat="identity", position="dodge") + labs(title="Pokes oredered by stat", y="value") -> p
+pivstats %>%
+  ggplot(aes(x=stat,y=reorder(value,value),fill=Total,text=Name)) +
+  geom_bar(stat="identity", position="dodge") +
+  labs(title="Pokes oredered by stat", y="value") -> p
 ggplotly(p)
 ```
 
+And an obvious plot to see is comparing `Total` variable to each of the component variables to get insights of visible patterns in data:
 
 ```{r}
-pstats %>% pivot_longer(.,c(HP,Attack,Defence,Sp_attack,Sp_defence,Speed),names_to = "stat") %>% ggplot(aes(color=stat,y=value,x=Total,text=Name)) + geom_point() + labs(title="Plotting stats vs PC") -> p
+pivstats %>%
+  ggplot(aes(color=stat,y=value,x=Total,text=Name)) +
+  geom_point() +
+  labs(title="Plotting stats vs PC") -> p
 ggplotly(p)
 ```
 
+## Principal component analysis
+
+The following thing to review consists in a reduction of dimensions on the data, the idea is to check if the primary variables contribute in some way to de dispersion of the capabilities of the Pokemon in battle. 
+
+I decide to use **PCA** to investigate how the variables relate in this dataset. In the first image are plotted the first and the second principal components, and the third one is displayed as a color scale.
+
+It is clear that _PC1_ contains the overall summary of the battle capabilities for the Pokemon. There is an spotlight Pokemon: `"Mega Eternatus"`, it is very different from the rest because of their great stats. On the other hand, some great Pokemons such as `"Mega Rayquaza", "Mega Groudon", "Mega Kyogre"` are the nearest neigbors of the best Pokemon. They are also following the tendency on _PC1_. 
 
 ```{r}
 pstats %>% select(HP,Attack,Defence,Sp_attack,Sp_defence,Speed) %>% prcomp() -> pca_poke
@@ -42,10 +95,15 @@ pcpoke %>% ggplot(aes(x=PC1,y=PC2, color=PC3, text=nombre)) + geom_point() + lab
 ggplotly(p)
 ```
 
+Second image projects `PC1`, `PC2`, `PC3`, and `PC4` in a plot. It is very clear that the main outlier corresponds to `"Mega Eternatus"`, however another Pokemon is highlighted (in yellow): `"Shuckle"` which is the bug with the highest defense on the game (because of its shell).
 
 ```{r}
 plot_ly(pcpoke, x= ~PC1, y=  ~PC2, z= ~PC3, color = ~PC4, text= ~nombre)
 ```
+
+In that visualization, it can be seen that over `PC1, PC2, PC3` is projected a cone filled with pokemon. That could be the main picking space for nintendo and gamefreak for the new Pokemon in every generation.
+
+So the following step is to get a better view of how original variables contribute with the $$2$$ principal components. In this plot you can see that the first impression about the summary along `PC1` could be confirmed as every variable are somehow directed in similar direction. A interesting thing is that for `PC2` seems to be a tendency for aggressive stats (`Speed`, `Sp_attack`) in positive values, and defensive to the other side.
 
 
 ```{r}
@@ -53,6 +111,18 @@ fviz_pca_var(pca_poke, col.var = "contrib", gradient.cols=c("#00AFBB","#E7B800",
 p
 ```
 
+## Clustering analysis
+
+In the PCA is shown that there is an area commonly picked to create new Pokemon over all generations. Another feature observed is that there is two outliers, however the rest of Pokemon also could be clustered in different groups. In this section I want to show you a classification that can be done using merely this type of stats.
+
+I will use $$k=6$$ for this analysis looking for classes somehow similar to this eschema:
+
+1. Common Pokemon
+2. Strong Pokemon
+3. Competitive Pokemon
+4. Prohibited Pokemon
+5. `Shukle`?
+6. `Mega Eternatus`?
 
 
 ```{r}
@@ -63,22 +133,32 @@ h<-hclust(d)
 fviz_dend(x=h,k=6)
 ```
 
+And proyected in a heatmap:
 
 ```{r}
 heatmaply(apply(ptstats[,3:8],c(1,2),as.numeric))
 ```
 
+The next thing to see is use tag of classes obtained by hierarchical clustering in the projection of the **PCA**.
 
 
 ```{r}
 cluspoke<-cutree(h,k=6)
-cbind(pcpoke,cluspoke) %>% ggplot(aes(x=PC1,y=PC2, color=as.factor(cluspoke), text=nombre)) + geom_point() + labs(title = "Pokes in the 2 PC") -> p
+cbind(pcpoke,cluspoke) %>%
+  ggplot(aes(x=PC1,y=PC2, color=as.factor(cluspoke), text=nombre)) +
+  geom_point() +
+  labs(title = "Classes of Pokemon") -> p
 ggplotly(p)
 ```
 
+And in the plotting relationship between `Defence~Attack` variables using class tags to deveal hidden patterns (if they exists).
+
 
 ```{r}
-cbind(pstats,cluspoke) %>% ggplot(aes(x=Defence,y=Attack, color=as.factor(cluspoke), size=Total, text=Name)) + geom_point() + labs(title = "Pokes in the 2 PC") -> p
+cbind(pstats,cluspoke) %>%
+  ggplot(aes(x=Defence,y=Attack, color=as.factor(cluspoke), size=Total, text=Name)) +
+  geom_point() +
+  labs(title = "Comparing stats on classes of Pokemon") -> p
 ggplotly(p)
 ```
 
