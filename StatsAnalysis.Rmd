@@ -91,7 +91,7 @@ It is clear that _PC1_ contains the overall summary of the battle capabilities f
 pstats %>% select(HP,Attack,Defence,Sp_attack,Sp_defence,Speed) %>% prcomp() -> pca_poke
 pcpoke <- pca_poke$x
 pcpoke <- cbind(as.data.frame(pcpoke),nombre=pstats$Name)
-pcpoke %>% ggplot(aes(x=PC1,y=PC2, color=PC3, text=nombre)) + geom_point() + labs(title = "Pokes in the 2 PC") -> p
+pcpoke %>% ggplot(aes(x=PC1,y=PC2, color=PC3, text=nombre)) + geom_point() + labs(title = "Pokes in principal components") -> p
 ggplotly(p)
 ```
 
@@ -101,9 +101,9 @@ Second image projects `PC1`, `PC2`, `PC3`, and `PC4` in a plot. It is very clear
 plot_ly(pcpoke, x= ~PC1, y=  ~PC2, z= ~PC3, color = ~PC4, text= ~nombre)
 ```
 
-In that visualization, it can be seen that over `PC1, PC2, PC3` is projected a cone filled with pokemon. That could be the main picking space for nintendo and gamefreak for the new Pokemon in every generation.
+In that visualization, it can be seen that over `PC1, PC2, PC3` is projected a cone filled with pokemon. That could be the main picking space for Nintendo and Gamefreak for the new Pokemon in every generation.
 
-So the following step is to get a better view of how original variables contribute with the $$2$$ principal components. In this plot you can see that the first impression about the summary along `PC1` could be confirmed as every variable are somehow directed in similar direction. A interesting thing is that for `PC2` seems to be a tendency for aggressive stats (`Speed`, `Sp_attack`) in positive values, and defensive to the other side.
+So the following step is to get a better view of how original variables contribute with the $2$ principal components. In this plot you can see that the first impression about the summary along `PC1` could be confirmed as every variable are somehow directed in similar direction. A interesting thing is that for `PC2` seems to be a tendency for aggressive stats (`Speed`, `Sp_attack`) in positive values, and defensive to the other side.
 
 
 ```{r}
@@ -115,13 +115,13 @@ p
 
 In the PCA is shown that there is an area commonly picked to create new Pokemon over all generations. Another feature observed is that there is two outliers, however the rest of Pokemon also could be clustered in different groups. In this section I want to show you a classification that can be done using merely this type of stats.
 
-I will use $$k=6$$ for this analysis looking for classes somehow similar to this eschema:
+I will use $k=6$ for this analysis looking for classes somehow similar to this eschema:
 
 1. Common Pokemon
 2. Strong Pokemon
 3. Competitive Pokemon
 4. Prohibited Pokemon
-5. `Shukle`?
+5. `Shuckle`?
 6. `Mega Eternatus`?
 
 
