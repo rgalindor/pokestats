@@ -207,7 +207,8 @@ ggplotly(p)
 
 
 ```{r}
-model_type_dnn <- train(pwtype.training[,3:8], pwtype.training[,9], method="dnn", preProcess = c("center","scale"))
+#model_type_dnn <- train(pwtype.training[,3:8], pwtype.training[,9], method="dnn", preProcess = c("center","scale"))
+model_type_dnn <- readRDS("model_type_dnn.rds")
 predictions <- predict(object=model_type_dnn,pwtype.test[,3:8])
 table(predictions)
 ```
