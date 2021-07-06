@@ -17,6 +17,7 @@ library(plotly)
 library(factoextra)
 library(heatmaply)
 library(knitr)
+library(caret)
 ```
 
 ## Dataset
@@ -161,4 +162,88 @@ cbind(pstats,cluspoke) %>%
   labs(title = "Comparing stats on classes of Pokemon") -> p
 ggplotly(p)
 ```
+
+
+## Classification using Machine Learning
+
+```{r}
+poketype<- read.csv("../pokedex_(Update_05.20).csv", row.names = 1)
+```
+
+
+```{r}
+pstats %>% inner_join(poketype, by = c("Name" = "name")) %>% select(pokedex_number,Name,HP,Attack,Defence,Sp_attack,Sp_defence,Speed,type_1) -> pstats_wtype
+```
+
+
+```{r}
+index <- createDataPartition(pstats_wtype$type_1, p=0.65, list=FALSE)
+pwtype.training <- pstats_wtype[index,]
+pwtype.test <- pstats_wtype[-index,]
+```
+
+
+```{r}
+model_type_knn <- train(pwtype.training[,3:8], pwtype.training[,9], method="knn", preProcess = c("center","scale"))
+predictions <- predict(object=model_type_knn,pwtype.test[,3:8])
+table(predictions)
+```
+
+```{r}
+testLabels <- pwtype.test[,9]
+confusionMatrix(predictions,as.factor(testLabels))
+```
+
+
+```{r}
+predictions2 <- predict(object = model_type_knn, pstats[,3:8])
+```
+
+
+```{r}
+cbind(pcpoke,predictions2) %>% ggplot(aes(x=PC1,y=PC2,color=predictions2, text=nombre)) + geom_point() + labs(title="Prediction using K Nearest Neibourghs") -> p
+ggplotly(p)
+```
+
+
+```{r}
+model_type_dnn <- train(pwtype.training[,3:8], pwtype.training[,9], method="dnn", preProcess = c("center","scale"))
+predictions <- predict(object=model_type_dnn,pwtype.test[,3:8])
+table(predictions)
+```
+
+
+```{r}
+predictions2 <- predict(object = model_type_dnn, pstats[,3:8])
+```
+
+
+```{r}
+cbind(pcpoke,predictions2) %>% ggplot(aes(x=PC1,y=PC2,color=predictions2, text=nombre)) + geom_point() + labs(title = "Prediction using Deep Neural Network") -> p
+ggplotly(p)
+```
+
+
+
+```{r}
+model_type_rf <- train(pwtype.training[,3:8], pwtype.training[,9], method="rf", preProcess = c("center","scale"))
+predictions <- predict(object=model_type_rf,pwtype.test[,3:8])
+table(predictions)
+```
+
+
+```{r}
+predictions2 <- predict(object = model_type_rf, pstats[,3:8])
+```
+
+
+```{r}
+cbind(pcpoke,predictions2) %>% ggplot(aes(x=PC1,y=PC2,color=predictions2, text=nombre)) + geom_point() + labs(title = "Predictions using Random Forest") -> p
+ggplotly(p)
+```
+
+
+
+
+
 
